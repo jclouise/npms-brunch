@@ -9,14 +9,15 @@ class NPMSBrunch extends Worker {
   }
 
   async messageHandler (msg) {
+    if (msg == null) return
     const message = JSON.parse(msg.content.toString())
     const msgDate = new Date(message.pushedAt)
-    console.log('Handling message for', msgDate.toIsoString())
+    console.log('Handling message for', msgDate.toISOString())
     if (msgDate < epoch) {
-      this.channel.ack()
+      this.channel.ack(msg)
     } else {
       console.log('Hit epoch, bye')
-      this.channel.nack()
+      this.channel.nack(msg)
     }
   }
 }
@@ -24,8 +25,12 @@ class NPMSBrunch extends Worker {
 async function brunch () {
   const queueName = 'npms'
   const worker = new NPMSBrunch(queueName)
+  const assertOpts = {
+    durable: true,
+    maxPriority: 1
+  }
   try {
-    worker.listen()
+    worker.listen(assertOpts)
   } catch (err) {
     console.log('ERR!', err)
   }
